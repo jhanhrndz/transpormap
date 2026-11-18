@@ -3,7 +3,8 @@ info:
   title: TransporMap API — propuesta
   version: 0.1.0-propuesta
   description: >-
-    Contrato de diseño H0, no implementado. El proveedor de identidad y el formato
+    Contrato de diseño H0; solo existe una operación de salud parcial y la conformidad
+    del contrato completo no está demostrada. El proveedor de identidad y el formato
     definitivo de sesión están pendientes; Bearer JWT es la integración candidata,
     no una obligación de almacenar JWT en el dispositivo. Registro, inicio de
     sesión, cierre y recuperación pertenecen al proveedor de identidad; no son

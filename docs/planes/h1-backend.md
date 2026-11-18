@@ -1,12 +1,12 @@
 # TransporMap — Plan H1: backend del esqueleto andante
 
-> Para quien ejecute: usar `subagent-driven-development`, con revisión independiente por tarea y antes del merge. Este archivo es planificación, no implementación ni prueba realizada. La aprobación de Fase 4 autoriza el trabajo técnico, pero no elimina las puertas de H0, no acredita proveedores ni autoriza gastos.
+> Para quien ejecute: usar revisión independiente por tarea y antes del merge. Este archivo es un plan: existe un esqueleto backend y pruebas locales, pero H1 no está terminado. La aprobación de Fase 4 autoriza el trabajo técnico, pero no elimina las puertas de H0, no acredita proveedores ni autoriza gastos. Los detalles propuestos para revisión están en [arquitectura backend](../06-arquitectura-detallada-backend.md).
 
 **Objetivo:** demostrar en el backend el flujo autenticado mínimo de publicar una alerta sintética y leer la misma alerta para mapa y lista, preservando las garantías de privacidad acordadas.
 
 **Arquitectura:** monolito modular Spring Boot, API `/v1`, PostgreSQL/PostGIS y un proveedor de identidad delegado. Spring verifica el token y el estado local de la cuenta en cada petición protegida; el cliente nunca obtiene acceso directo a tablas. La identidad externa autentica, pero la autorización de cuenta activa y rol pertenece al dominio de TransporMap.
 
-**Tecnologías:** Java y Spring Boot; Maven wrapper; PostgreSQL/PostGIS; migraciones versionadas; pruebas con BD PostGIS real en Testcontainers; OpenAPI 3.1 validado. Las versiones exactas de Java, Spring, PostgreSQL/PostGIS y plugins se fijarán únicamente tras consultar y verificar la metadata vigente de Spring Initializr, la compatibilidad del proveedor y los gates H0. JWT Bearer representa el candidato de contrato; no está aprobado ni demostrado un proveedor concreto. No escribir `latest` como versión.
+**Tecnologías:** Java y Spring Boot; Maven wrapper; PostgreSQL/PostGIS; migraciones versionadas; pruebas con BD PostGIS real en Testcontainers; OpenAPI 3.1 validado estructuralmente. El esqueleto existente fija Java 25 y Spring Boot 4.1.2 tras consultar Spring Initializr; resta verificar compatibilidad con hosting y gates H0. PostgreSQL/PostGIS y plugins siguen por fijar. JWT Bearer representa el candidato de contrato; no está aprobado ni demostrado un proveedor concreto. No escribir `latest` como versión.
 
 **Especificaciones:** [requisitos aprobados](../01-requisitos.md), [arquitectura aprobada condicionalmente](../02-stack-y-arquitectura.md), [roadmap H0/H1](../03-plan-y-roadmap.md), [OpenAPI propuesto](../api/openapi-propuesta.yaml), [notas de sus límites](../api/notas-contrato-h0.md), [trazabilidad del legado](../descubrimiento/04-trazabilidad-legado.md), [preflight de proveedores](../operacion/00-preflight-demo.md) y [plan de pruebas](../04-plan-pruebas.md).
 
@@ -14,7 +14,7 @@
 
 - Este plan detalla **solo backend H1**. H1 completo exige además PWA, mapa/lista, CI/CD, revisión independiente y demo desplegada; un backend local o un proveedor simulado no son H1 terminado.
 - Mantener intactos `src/`, `nbproject/`, JAR e historial del legado durante el arranque. No trasladar credenciales, contraseñas, licencias embebidas o assets sin verificar su procedencia. No existen filas Oracle que migrar.
-- No exponer contenido de alertas a visitantes: `GET /health` es la única operación pública del subconjunto. `GET /v1/me`, `GET /v1/alerts`, `GET /v1/alerts/{alertId}` y `POST /v1/alerts` requieren cuenta activa autenticada. Las rutas de registro, recuperación y login del proveedor externo no se inventan en esta API.
+- No exponer contenido de alertas a visitantes: `GET /v1/health` es la única operación pública del subconjunto. `GET /v1/me`, `GET /v1/alerts`, `GET /v1/alerts/{alertId}` y `POST /v1/alerts` requieren cuenta activa autenticada. Las rutas de registro, recuperación y login del proveedor externo no se inventan en esta API.
 - Mantener `clientReportId` estable, ligado al autor, e `Idempotency-Key` del contrato. El reintento idéntico debe devolver la misma identidad de alerta mientras exista evidencia y autorización; contenido distinto con la misma identidad produce conflicto. El propietario decidió que, si tras purgar datos no puede saberse si se publicó, se conserva borrador y foto, no se reenvía automáticamente y se pide revisión manual. No es necesario mantener una marca perpetua; identificar de forma segura cuándo existe incertidumbre sigue siendo una puerta H0/H5.
 - Registrar hora observada y recibida por separado; rechazar una observación más de cinco minutos futura con error corregible. La vigencia 24/72 h está aprobada; H1 debe guardar y devolver `expiresAt` y `status` coherentes con ese cómputo. No corregir la hora silenciosamente.
 - No añadir un endpoint público alternativo, usuario demo privilegiado, token embebido, contraseña estática o JWT con firma desactivada para superar una prueba o una limitación del proveedor. Los datos sintéticos deben identificarse como tales en documentación/demo.
@@ -32,7 +32,7 @@ No se cierra la historia de identidad completa hasta demostrar registro, verific
 
 ## Estructura y convenciones propuestas
 
-Raíz futura `backend/`, paquete propuesto `com.jhandev.transpormap`. Los siguientes son nombres de diseño para coordinar implementadores; no afirman que ya existan. El recurso REST mantiene los nombres del OpenAPI; los nombres de paquetes y clases no cambian el contrato HTTP.
+Raíz existente `backend/`, paquete `com.jhandev.transpormap`. La tabla muestra la estructura objetivo: algunos archivos ya existen y otros son propuestas para coordinar implementadores. El recurso REST mantiene los nombres del OpenAPI; los nombres de paquetes y clases no cambian el contrato HTTP.
 
 | Ruta futura bajo `backend/` | Responsabilidad |
 |---|---|
@@ -105,7 +105,7 @@ interface AlertApplicationService {
 
 ## Tarea 0 — Preparar build y límites de identidad
 
-**Archivos futuros:** `backend/pom.xml`, wrapper Maven y `backend/src/main/java/com/jhandev/transpormap/TransporMapApplication.java`; configuración y pruebas básicas bajo las rutas anteriores; actualizar solo documentación/ADR afectados en el mismo PR.
+**Archivos:** ya existen `backend/pom.xml`, wrapper Maven y `backend/src/main/java/com/jhandev/transpormap/TransporMapApplication.java`; faltan persistencia, migraciones y pruebas de integración. Actualizar documentación/ADR afectados junto a los cambios.
 
 **Consume:** metadata oficial de Spring Initializr y puertas H0. **Produce:** build reproducible que ejecuta una prueba de arranque sin conectarse a servicios remotos; parámetros de `issuer`, audiencia y BD declarados sin valores reales.
 
@@ -113,12 +113,12 @@ interface AlertApplicationService {
 - [ ] Fijar y registrar el contrato verificable para identidad: proveedor candidato, mecanismo de clave pública, `issuer`, audiencia y traducción de `sub` a cuenta local; si no están disponibles, implementar únicamente el puerto y pruebas de comportamiento con identidad criptográficamente controlada por pruebas. No hacer pasar esa prueba por login real.
 - [ ] Crear el proyecto Spring con wrapper y dependencias estrictamente necesarias: web, validación, seguridad/resource server, persistencia PostgreSQL, migraciones, health y testing. El scaffolding generado se revisa; las reglas y comportamiento propios se implementan TDD en las tareas siguientes.
 - [ ] Comprobar que el proyecto arranca en configuración aislada sin credenciales ni red saliente y que `GET /v1/health` no revela configuración. No exponer Actuator completo o detalles internos por defecto.
-- [ ] Ejecutar la verificación del wrapper y registrar resultado. **Comando previsto, aún inexistente:** desde `backend/`, `./mvnw verify` en shell compatible o `.\mvnw.cmd verify` en PowerShell. Resultado esperado tras implementación: salida 0; si el runtime de pruebas no está listo, registrar bloqueo en lugar de afirmar pase.
+- [ ] Ejecutar la verificación completa del wrapper y registrar resultado: desde `backend/`, `./mvnw verify` en shell compatible o `.\mvnw.cmd verify` en PowerShell. La suite local `test` ya pasó; `verify` integral y checksum del wrapper siguen pendientes. Si el runtime de pruebas no está listo, registrar bloqueo en lugar de afirmar pase.
 - [ ] Abrir PR y obtener revisión independiente; no hacer merge con builds fallidos ni emitir el hito H1 como completo.
 
 ## Tarea 1 — Dominio de alerta y reglas temporales
 
-**Archivos futuros:** `backend/src/main/java/com/jhandev/transpormap/alert/AlertCategory.java`, `RoadImpact.java`, `Severity.java`, `AlertStatus.java`, `PhotoIntent.java`, `PhotoStatus.java`, `GeoPoint.java`, `CreateAlertCommand.java`, `AlertTimeRules.java`; `backend/src/test/java/com/jhandev/transpormap/alert/AlertTimeRulesTest.java` y `GeoPointTest.java`.
+**Archivos previstos:** existen `AlertCategory.java`, `AlertTimeRules.java` y `AlertTimeRulesTest.java` bajo `backend/src/`; los demás tipos y pruebas de esta tarea permanecen pendientes: `RoadImpact`, `Severity`, `AlertStatus`, `PhotoIntent`, `PhotoStatus`, `GeoPoint`, `CreateAlertCommand` y `GeoPointTest`.
 
 **Consume:** valores `Category`, `Point` y `CreateAlert` del contrato; `java.time.Clock`. **Produce:** `AlertTimeRules.validateObservedAt(Instant observedAt, Clock clock)` y `AlertTimeRules.expiresAt(AlertCategory category, Instant observedAt)`, más validación de `GeoPoint`.
 
@@ -202,4 +202,4 @@ interface AlertApplicationService {
 | Contratos cruzados | Usuario y puerto de repositorio se consumen explícitamente; DTO debe transformarse desde/a OpenAPI y la clave de idempotencia se pasa al servicio. Los tipos de dominio son propuestos y deben definirse antes del consumidor. |
 | Fallos prioritarios | Los cinco casos de revisión están asignados a tareas con pruebas identificadas. La prueba de expiración y la protección tras retiro deben ampliarse en H2/H5/H6. |
 | Disponibilidad y riesgos | No hay contenedor detectado ni proveedor/correo con preflight real. Se acordó revisión manual ante reintento antiguo incierto; detectar el caso sigue sin diseño validado. Ninguna tarea puede presentar esos puntos como verificados. |
-| Límites de este documento | No fija parche de Spring/JDK/PostGIS, proveedor real ni comando de arranque que aún no existe; se resuelven mediante los gates y PR de preparación, sin alterar alcance aprobado. |
+| Límites de este documento | El esqueleto fija Spring Boot 4.1.2 y Java 25; PostGIS, proveedor real y comando integrado de arranque siguen pendientes, junto con compatibilidad de hosting y gates de preparación. |

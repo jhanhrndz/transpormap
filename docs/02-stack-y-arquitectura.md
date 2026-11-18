@@ -1,6 +1,6 @@
 # TransporMap — Stack y arquitectura propuestos
 
-**Fase 3: dirección aprobada por JhanDev, con condiciones de viabilidad pendientes.** El propietario aclaró que el despliegue será una **demo pública de portafolio**, no un servicio vial operacional de producción; las alertas y fotos siguen requiriendo sesión. Consulta de condiciones: 18 de noviembre de 2026. Fuente de verdad: [requisitos aprobados](01-requisitos.md). Esta arquitectura evoluciona el TransporMap legado descrito en [reconocimiento](00-informe-reconocimiento.md): conserva sus conceptos, pantallas y campos útiles; reconstruye los componentes y el esquema que no pueden trasladarse directamente. No hay datos Oracle que migrar. No se han creado cuentas, desplegado servicios, probado proveedores ni escrito código de producción.
+**Fase 3: dirección aprobada por JhanDev, con condiciones de viabilidad pendientes.** El propietario aclaró que el despliegue será una **demo pública de portafolio**, no un servicio vial operacional de producción; las alertas y fotos siguen requiriendo sesión. Consulta de condiciones: 18 de noviembre de 2026. Fuente de verdad: [requisitos aprobados](01-requisitos.md). Esta arquitectura evoluciona el TransporMap legado descrito en [reconocimiento](00-informe-reconocimiento.md): conserva sus conceptos, pantallas y campos útiles; reconstruye los componentes y el esquema que no pueden trasladarse directamente. No hay datos Oracle que migrar. Existen un esqueleto backend y código parcial del cliente; no se han acreditado proveedores ni desplegado la demo. Análisis detallados para revisión: [frontend](05-arquitectura-detallada-frontend.md) y [backend](06-arquitectura-detallada-backend.md).
 
 ## 1. Recomendación y límites
 
@@ -194,7 +194,7 @@ Conjuntos previstos: sesión y perfil, alertas/lista/mapa, ruta/cercanía, confi
 
 ## 7. ADR y decisiones abiertas
 
-Los [ADRs propuestos](adr/README.md) registran contexto, alternativas, decisiones provisionales y consecuencias. Ninguno implica aprobación de Fase 3 ni selección de cuenta. Puntos abiertos que deben resolverse o aceptarse explícitamente antes de implementar:
+Los [ADRs](adr/README.md) registran contexto, alternativas, decisiones y consecuencias. La dirección general de Fase 3 fue aprobada; los detalles nuevos, proveedores y validaciones pendientes no se consideran aprobados o probados automáticamente. Puntos abiertos que deben resolverse o aceptarse explícitamente antes de la integración correspondiente:
 
 - Evidencia de registro y uso de cada proveedor sin cargos, sin tarjeta y con bloqueo efectivo de excedentes; Render excluye recomendación para producción. Hasta comprobarlo no se habilitará CI/CD con despliegue automático a servicios que puedan facturar. Si falla, no hay backend de demo elegido. La sonda externa no debe hacer peticiones periódicas que mantengan despierto el backend; si el proveedor de monitoreo no permite evitarlo, usar mediciones por demanda o no habilitarla.
 - Prueba de respaldo diario de BD **y objetos**, almacenamiento 30 días, restauración ≤4 h y borrados re-aplicados a COP 0. Ningún servicio propuesto lo ofrece automáticamente con evidencia disponible.
@@ -208,4 +208,4 @@ Los [ADRs propuestos](adr/README.md) registran contexto, alternativas, decisione
 
 ## 8. Checkpoint
 
-**Fase 3 aprobada en su dirección por el propietario**, con las pruebas de viabilidad y condiciones anteriores todavía pendientes. El despliegue es para una demo de portafolio, no para operación vial de producción; no se afirma que el despliegue o la gratuidad estén demostrados. Fase 4 definirá roadmap, estimaciones, pruebas, estrategia de ramas y definición de terminado; solo una aprobación explícita de esa planificación autoriza comenzar código de producción.
+**Fase 3 aprobada en su dirección por el propietario**, con las pruebas de viabilidad y condiciones anteriores todavía pendientes. El despliegue es para una demo de portafolio, no para operación vial de producción; no se afirma que el despliegue o la gratuidad estén demostrados. La Fase 4 y el inicio de implementación fueron aprobados posteriormente. Los nuevos detalles de frontend y backend se presentan para revisión antes de continuar su implementación.
