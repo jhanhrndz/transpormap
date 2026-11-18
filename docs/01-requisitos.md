@@ -255,6 +255,8 @@ El propietario aceptó las siete propuestas del primer lote de Fase 2:
 
 **Sesión y borradores [A]:** al cerrar sesión, ocultar o borrar la caché de consulta y ofrecer conservar los pendientes aislados de otras cuentas o descartarlos expresamente. Recuperar un pendiente solo al volver a autenticar la misma cuenta; no borrarlo silenciosamente. Tras siete días sin validación, el acceso queda bloqueado hasta reconectar, pero se conservan pendientes según la retención aprobada. La administración requiere conexión.
 
+**Reintento antiguo incierto [A]:** si ya no es posible determinar con certeza si un reporte offline antiguo fue aceptado y su alerta se ha eliminado, conservar el borrador y la foto, no publicar de nuevo automáticamente y solicitar revisión manual explicando la incertidumbre. No crear duplicados silenciosamente ni hacer reaparecer una alerta retirada. La detección y evidencia de ese estado se definirán y probarán técnicamente; la decisión no autoriza conservar identificadores personales indefinidamente.
+
 **Hora [A]:** calcular caducidad desde la fecha de observación; si supera por más de cinco minutos la hora del servidor, rechazar con mensaje corregible y conservar el borrador. No modificar silenciosamente la hora. Esta regla trata hechos observados, no eventos futuros programados; se probarán zonas horarias y envío tardío.
 
 **Confirmaciones [A]:** no permitir que el autor se confirme a sí mismo; impedir crear o modificar confirmaciones en alertas cerradas, vencidas o retiradas; permitir retirar la confirmación propia incluso después del cierre. Mantener conteos separados sin calificar de «verificado» el reporte. Una petición idéntica no duplica voto ni modifica la fecha de la confirmación previa.

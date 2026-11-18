@@ -14,6 +14,8 @@ Opciones a evaluar antes de H5:
 2. Establecer una ventana temporal de envío y, cuando no pueda garantizarse deduplicación, detener el envío sin descartar el borrador ni la foto y ofrecer recuperación explícita. Esa ventana cambiaría o precisaría el alcance y necesita revisión del propietario.
 3. Mantener una prueba firmada persistente de cada aceptación y un mecanismo para que el cliente la recupere; evaluar el mismo problema de cuánto tiempo se conserva, seguridad y disponibilidad tras el borrado.
 
+**Decisión del propietario:** si el servidor ya no puede determinar con certeza si un envío antiguo fue publicado, conservar el borrador y su fotografía, detener cualquier publicación automática nueva y pedir revisión manual explicando la incertidumbre. No crear duplicados silenciosamente. Esta decisión no define todavía la duración de marcadores de deduplicación ni garantiza detectar cada situación sin evidencia; la arquitectura debe identificar cuándo el resultado es incierto y diseñar el flujo verificable. La revisión manual no elimina obligaciones de privacidad ni autoriza reabrir automáticamente una alerta retirada.
+
 Requisitos irrenunciables para evaluar cualquier opción: no duplicar silenciosamente, no eliminar borradores sin acción del usuario, no cambiar de autor, respetar solicitudes de eliminación y no resucitar alertas retiradas. Registrar la solución y su límite demostrable en contrato y ADR antes de implementar. La simple expiración de una clave HTTP no resuelve el caso.
 
 ## Instantánea y cursores
