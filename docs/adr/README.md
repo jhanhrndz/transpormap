@@ -1,6 +1,6 @@
 # ADR de arquitectura — propuestas de Fase 3
 
-Estado general: **dirección aprobada de forma condicionada**, con proveedores y pruebas de viabilidad pendientes; el despliegue será una demo de portafolio, no operación vial de producción. El propietario aprobó la Fase 4 y autorizó la implementación; esto no autoriza gastos ni acredita proveedores. Los detalles nuevos de [frontend](../05-arquitectura-detallada-frontend.md) y [backend](../06-arquitectura-detallada-backend.md) están propuestos para revisión; los demás ADR pueden conservar propuestas concretas pendientes. Las condiciones y fuentes están en [stack y arquitectura](../02-stack-y-arquitectura.md).
+Estado general: **dirección aprobada de forma condicionada**, con proveedores y pruebas de viabilidad pendientes; el despliegue será una demo de portafolio, no operación vial de producción. El propietario aprobó la Fase 4, los análisis detallados de [frontend](../05-arquitectura-detallada-frontend.md) y [backend](../06-arquitectura-detallada-backend.md), y autorizó la implementación; esto no autoriza gastos ni acredita proveedores. Las alternativas que esos análisis mantienen como candidatas y los demás ADR pueden conservar decisiones concretas pendientes. Las condiciones y fuentes están en [stack y arquitectura](../02-stack-y-arquitectura.md).
 
 | ADR | Decisión | Estado y consecuencia clave |
 |---|---|---|

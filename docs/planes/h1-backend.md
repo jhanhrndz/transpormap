@@ -1,6 +1,6 @@
 # TransporMap — Plan H1: backend del esqueleto andante
 
-> Para quien ejecute: usar revisión independiente por tarea y antes del merge. Este archivo es un plan: existe un esqueleto backend y pruebas locales, pero H1 no está terminado. La aprobación de Fase 4 autoriza el trabajo técnico, pero no elimina las puertas de H0, no acredita proveedores ni autoriza gastos. Los detalles propuestos para revisión están en [arquitectura backend](../06-arquitectura-detallada-backend.md).
+> Para quien ejecute: usar revisión independiente por tarea y antes del merge. Este archivo es un plan: existe un esqueleto backend y pruebas locales, pero H1 no está terminado. La aprobación de Fase 4 autoriza el trabajo técnico, pero no elimina las puertas de H0, no acredita proveedores ni autoriza gastos. Los detalles aprobados y sus condiciones están en [arquitectura backend](../06-arquitectura-detallada-backend.md).
 
 **Objetivo:** demostrar en el backend el flujo autenticado mínimo de publicar una alerta sintética y leer la misma alerta para mapa y lista, preservando las garantías de privacidad acordadas.
 
@@ -47,6 +47,8 @@ Raíz existente `backend/`, paquete `com.jhandev.transpormap`. La tabla muestra 
 | `src/test/java/com/jhandev/transpormap/` | Pruebas unitarias, HTTP y PostgreSQL/PostGIS reales. Los certificados y sujetos de pruebas son sintéticos. |
 
 No duplicar el esquema OpenAPI dentro de DTO sin comprobar correspondencia; las clases H1 cubren los campos de `CreateAlert` y `Alert` presentes en el contrato. Usar `Instant` para momentos, `UUID` para identidades y `BigDecimal` o `double` validado para coordenadas. El significado geográfico es WGS84: latitud de −90 a 90 y longitud de −180 a 180; GeoJSON usa orden longitud/latitud. Las distancias se implementarán en H3 con `geography` en metros, no convirtiendo grados manualmente.
+
+Al integrar HTTP, comprobar explícitamente que cada eje ausente o `null` se rechaza y nunca se convierte silenciosamente en cero por usar primitivos. Contra PostGIS real verificar ida y vuelta de un punto colombiano con `ST_X` = longitud, `ST_Y` = latitud y SRID 4326; una prueba unitaria del valor no demuestra persistencia correcta.
 
 ## Contratos internos propuestos
 

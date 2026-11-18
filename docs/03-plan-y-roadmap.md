@@ -67,6 +67,8 @@ Horas estimadas de **una persona**, incluidos desarrollo, pruebas y documentaci�
 | **H8 Entrega de portafolio** | README español/resumen inglés, guías de usuario/despliegue, ADR y OpenAPI validados, changelog, datos de demo etiquetados, capturas/vídeo y guion para entrevistas; despliegue revisado. | 45–80 |
 | **Total obligatorio estimado** | Suma de H0–H8, sin push cerrado condicionado ni espera externa. | **428–710** |
 
+**Ajuste aprobado para H1:** conservar por cuenta la identidad y el cuerpo de cada intento antes del envío y detenerse ante un resultado incierto. H5 desarrolla la cola completa offline y las fotos. El diseño, las pruebas y la detección de incertidumbre tras purga siguen pendientes; revisar las estimaciones con evidencia sin sumar dos veces la parte adelantada.
+
 Alrededor de **43–71 semanas efectivas** a 10 h/semana (aprox. 10–17 meses), si la disponibilidad se cumple de forma sostenida. Las semanas no incluyen esperas de proveedor, pausas personales, retrasos de cuenta, validaciones con usuarios ni cambios de alcance; no constituyen fecha de entrega. Conforme se midan H0 y H1, revisar la estimación con evidencia y presentar ajustes.
 
 **Opcional condicionado:** investigar y, solo si es viable gratuitamente, implementar avisos con la aplicación cerrada: **20–45 h adicionales**; no está incluido en el total ni se convierte en requisito garantizado. Los hitos pueden dividirse en varios PR pequeños. Toda iteración termina con pruebas/revisión/documentación y despliegue si el entorno aprobado está disponible. Si la dependencia remota impide desplegar, la capacidad local se puede revisar, pero la iteración no se presenta como entrega desplegada completa.

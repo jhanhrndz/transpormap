@@ -1,6 +1,6 @@
-# Arquitectura detallada del backend — propuesta para revisión
+# Arquitectura detallada del backend
 
-**Estado:** la dirección Java/Spring Boot, monolito modular y PostgreSQL/PostGIS fue aprobada en Fase 3 con condiciones. Las decisiones más detalladas de este documento son **propuestas** para revisión, no selección definitiva de librerías o proveedores. Consulta documental: 18 de noviembre de 2026. Se conserva la trazabilidad con `Usuario`, `Denuncia`, `Evento`, `Lugar_Denuncia` y `Tramo` del legado; la BD Oracle perdida no se puede migrar como datos existentes.
+**Estado:** la dirección Java/Spring Boot, monolito modular y PostgreSQL/PostGIS fue aprobada en Fase 3 con condiciones; las recomendaciones detalladas fueron aprobadas por JhanDev. Las opciones explícitamente candidatas, versiones y proveedores siguen sujetas a validación de viabilidad y compatibilidad. Consulta documental: 18 de noviembre de 2026. Se conserva la trazabilidad con `Usuario`, `Denuncia`, `Evento`, `Lugar_Denuncia` y `Tramo` del legado; la BD Oracle perdida no se puede migrar como datos existentes.
 
 ## 1. Forma del sistema
 

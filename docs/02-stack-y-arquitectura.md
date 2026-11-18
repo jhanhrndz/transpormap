@@ -208,4 +208,4 @@ Los [ADRs](adr/README.md) registran contexto, alternativas, decisiones y consecu
 
 ## 8. Checkpoint
 
-**Fase 3 aprobada en su dirección por el propietario**, con las pruebas de viabilidad y condiciones anteriores todavía pendientes. El despliegue es para una demo de portafolio, no para operación vial de producción; no se afirma que el despliegue o la gratuidad estén demostrados. La Fase 4 y el inicio de implementación fueron aprobados posteriormente. Los nuevos detalles de frontend y backend se presentan para revisión antes de continuar su implementación.
+**Fase 3 aprobada en su dirección por el propietario**, con las pruebas de viabilidad y condiciones anteriores todavía pendientes. El despliegue es para una demo de portafolio, no para operación vial de producción; no se afirma que el despliegue o la gratuidad estén demostrados. La Fase 4, el inicio de implementación y las recomendaciones detalladas de frontend y backend fueron aprobados posteriormente; los proveedores y pruebas de viabilidad siguen pendientes.
