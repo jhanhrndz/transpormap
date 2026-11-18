@@ -1,12 +1,12 @@
 # H1 — Plan técnico del cliente de TransporMap
 
-> **Estado:** planificación de una iteración futura; no hay cliente implementado ni pruebas ejecutadas. Desarrollar mediante subagentes con revisión independiente por PR. La Fase 4 está aprobada; las puertas de H0 y de despliegue siguen vigentes.
+> **Estado:** H1 en curso. Existe un módulo parcial de preparación de alertas y pruebas locales en `frontend/`; aún no hay interfaz, transporte, persistencia ni cliente completo. Desarrollar mediante subagentes con revisión independiente. La Fase 4 está aprobada; las puertas de H0 y de despliegue siguen vigentes.
 
 **Objetivo:** permitir que una persona con cuenta inicie sesión, cree una alerta de demostración y la vea con la misma identidad en mapa y publicaciones, sobre un cliente accesible desde móvil y escritorio.
 
 **Arquitectura:** React/TypeScript como PWA adaptable, separando sesión, transporte HTTP, alerta y adaptador de mapa. Spring Boot sigue siendo la autoridad de acceso y de datos; el cliente no obtiene permisos por mostrar una pantalla. El proveedor de identidad y el envío de correo aún no están validados.
 
-**Stack propuesto, no instalado:** React, TypeScript, compilador y navegador de pruebas que se fijen mediante versiones compatibles y revisadas en H0. Para las pruebas se propone Vitest + Testing Library y Playwright, sujetos a aprobación técnica del responsable y a comprobación de soporte/costo; sus nombres no implican que estén instalados ni que se haya ejecutado una prueba.
+**Stack propuesto, aún no instalado:** React, compilador TypeScript y navegador de pruebas que se fijen mediante versiones compatibles y revisadas en H0. Existe código TypeScript parcial, probado con la ejecución experimental de Node sin comprobación estática de tipos. Para las pruebas se propone Vitest + Testing Library y Playwright, sujetos a aprobación técnica y a comprobación de soporte/costo; sus nombres no implican que estén instalados.
 
 **Fuentes:** [requisitos aprobados](../01-requisitos.md), [arquitectura](../02-stack-y-arquitectura.md), [roadmap](../03-plan-y-roadmap.md), [OpenAPI de H0](../api/openapi-propuesta.yaml), [notas de contrato](../api/notas-contrato-h0.md), [preflight de demo](../operacion/00-preflight-demo.md) y [trazabilidad del legado](../descubrimiento/04-trazabilidad-legado.md). Cuando un ejemplo de este plan y el contrato final difieran, corregir el plan y las pruebas antes de implementar, sin alterar requisitos aprobados unilateralmente.
 

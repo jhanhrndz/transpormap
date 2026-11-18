@@ -65,3 +65,23 @@ test('rejects an empty observed time without substituting another one', () => {
   assert.throws(() => prepareAlert({ ...report(), observedAt: '' }));
   assert.throws(() => prepareAlert({ ...report(), observedAt: '   ' }));
 });
+
+test('rejects malformed dates, impossible calendar days and invalid offsets', () => {
+  for (const observedAt of [
+    'not-a-date', '2026-01-02', '2026-01-02T14:30:00',
+    '2025-02-29T14:30:00Z', '2026-04-31T14:30:00Z',
+    '2026-00-01T14:30:00Z', '2026-13-01T14:30:00Z',
+    '2026-01-02T24:00:00Z', '2026-01-02T14:60:00Z',
+    '2026-01-02T14:30:61Z', '2026-01-02T14:30:00+24:00',
+    '2026-01-02T14:30:00-05:60', ' 2026-01-02T14:30:00Z',
+  ]) assert.throws(() => prepareAlert({ ...report(), observedAt }), observedAt);
+});
+
+test('preserves valid dates and offsets without normalizing the input', () => {
+  for (const observedAt of [
+    '2024-02-29T23:59:59.123456789Z', '2026-01-02T09:30:00-05:00',
+    '2000-02-29t00:00:00z', '2016-12-31T23:59:60Z',
+  ]) {
+    assert.equal(JSON.parse(prepareAlert({ ...report(), observedAt }).body).observedAt, observedAt);
+  }
+});

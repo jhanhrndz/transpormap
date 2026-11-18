@@ -15,6 +15,21 @@ export type AlertDraft = {
 
 export type PreparedAlert = Readonly<{ idempotencyKey: string; body: string }>;
 
+function hasPlausibleTimestamp(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:[Zz]|([+-])(\d{2}):(\d{2}))$/.exec(value);
+  if (!match) return false;
+
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText, , offsetHourText, offsetMinuteText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysPerMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return month >= 1 && month <= 12 && day >= 1 && day <= daysPerMonth[month - 1]
+    && Number(hourText) <= 23 && Number(minuteText) <= 59 && Number(secondText) <= 60
+    && (offsetHourText === undefined || (Number(offsetHourText) <= 23 && Number(offsetMinuteText) <= 59));
+}
+
 export function prepareAlert(draft: AlertDraft, createId: () => string = () => crypto.randomUUID()): PreparedAlert {
   const categories: readonly string[] = ['poor_road', 'full_closure', 'partial_closure', 'accident', 'landslide_flood', 'roadworks', 'freight_restriction'];
   const impacts: readonly string[] = ['open', 'partial', 'closed', 'unknown'];
@@ -24,6 +39,9 @@ export function prepareAlert(draft: AlertDraft, createId: () => string = () => c
   }
   if (typeof draft.observedAt !== 'string' || draft.observedAt.trim().length === 0) {
     throw new RangeError('La hora de observación es obligatoria.');
+  }
+  if (!hasPlausibleTimestamp(draft.observedAt)) {
+    throw new RangeError('La fecha y hora de observación no tienen un formato válido.');
   }
   const titleLength = Array.from(draft.title).length;
   const descriptionLength = Array.from(draft.description).length;
