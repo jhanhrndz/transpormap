@@ -35,6 +35,13 @@ node -e "const y=require('[ruta-local]/.vscode/extensions/ritwickdey.liveserver-
 
 El parser y AJV pertenecen a una extensión local y sus rutas/versiones no son una dependencia reproducible del proyecto; el pipeline deberá fijar sus propias herramientas cuando se apruebe e implemente.
 
-**Esto es validación parcial**, no validación integral contra JSON Schema 2020-12 ni la especificación OpenAPI 3.1: no se encontró un validador 3.1 instalado. AJV 4 no verifica todos los vocabularios y formatos de 3.1; las reglas de negocio y autorizaciones requieren tests sobre la API real. H0 no debe darse por cerrado como «contrato OpenAPI 3.1 validado» hasta completar decisiones anteriores y ejecutar un validador adecuado, además de revisión independiente.
+Posteriormente se validó el documento con **Redocly CLI 2.79.0**, perfil `minimal`, ejecutado desde caché local sin red. Se corrigieron dos errores estructurales causados por comas sin comillas en mapas YAML, se agregaron descripciones de tags y `operationId`, y se cambió la ruta de instantáneas a `/sync/alerts/snapshots` para eliminar ambigüedades. El resultado del comando de abajo fue **salida 0, sin errores ni advertencias**:
+
+```powershell
+$env:REDOCLY_TELEMETRY='off'
+npx.cmd --offline --yes --cache "$env:TEMP\transpormap-npm-cache" @redocly/cli@2.79.0 lint --extends minimal docs/api/openapi-propuesta.yaml
+```
+
+El perfil `minimal` valida la estructura y reglas seleccionadas; no es una auditoría de seguridad ni prueba de comportamiento, cumplimiento de requisitos o validación exhaustiva de todos los vocabularios JSON Schema 2020-12. La ubicación de caché es local y puede no existir en otra máquina. AJV 4 tampoco verifica todos los vocabularios y formatos de 3.1. H0 sigue requiriendo resolver las decisiones anteriores y una revisión independiente antes de considerar el contrato operativo cerrado.
 
 Referencia primaria para composición, rutas, seguridad y datos binarios: [OpenAPI Specification 3.1.0](https://spec.openapis.org/oas/v3.1.0); los binarios enteros se representan por su media type, y las partes multipart mediante `encoding` de acuerdo con dicha especificación. No se enviaron documentos ni datos del usuario a un validador externo.

@@ -18,13 +18,19 @@ security:
   - bearerAuth: []
 tags:
   - name: Cuenta
+    description: Perfil y preferencias de la cuenta autenticada.
   - name: Alertas
+    description: Publicaciones y confirmaciones para usuarios autorizados.
   - name: Geografía
+    description: Consultas por ruta o cercanía con datos geográficos protegidos.
   - name: Moderación
+    description: Reportes de abuso y acciones administrativas auditables.
   - name: Operación
+    description: Estado básico de disponibilidad del servicio.
 paths:
   /health:
     get:
+      operationId: getHealth
       tags: [Operación]
       summary: Comprobar disponibilidad básica sin revelar configuración
       security: []
@@ -40,6 +46,7 @@ paths:
                   status: { const: up }
   /me:
     get:
+      operationId: getMyProfile
       tags: [Cuenta]
       summary: Consultar perfil autenticado
       responses:
@@ -50,6 +57,7 @@ paths:
               schema: { $ref: '#/components/schemas/Profile' }
         '401': { $ref: '#/components/responses/Unauthorized' }
     patch:
+      operationId: updateMyProfile
       tags: [Cuenta]
       summary: Actualizar alias
       requestBody:
@@ -71,6 +79,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
   /me/zones:
     get:
+      operationId: getMyZones
       tags: [Cuenta]
       summary: Consultar zonas y preferencias de avisos
       responses:
@@ -81,6 +90,7 @@ paths:
               schema: { $ref: '#/components/schemas/ZonePreferences' }
         '401': { $ref: '#/components/responses/Unauthorized' }
     put:
+      operationId: updateMyZones
       tags: [Cuenta]
       summary: Reemplazar zonas y preferencias de avisos
       requestBody:
@@ -98,6 +108,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
   /me/offline-authorization:
     get:
+      operationId: getOfflineAuthorization
       tags: [Cuenta]
       summary: Obtener autorización local limitada para una cuenta activa
       description: >-
@@ -116,6 +127,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
   /me/privacy-requests:
     post:
+      operationId: createPrivacyRequest
       tags: [Cuenta]
       summary: Registrar solicitud del titular sobre datos personales
       description: >-
@@ -147,6 +159,7 @@ paths:
         '429': { $ref: '#/components/responses/RateLimited' }
   /alerts:
     get:
+      operationId: listAlerts
       tags: [Alertas]
       summary: Consultar alertas visibles con filtros
       parameters:
@@ -167,6 +180,7 @@ paths:
               schema: { $ref: '#/components/schemas/AlertPage' }
         '401': { $ref: '#/components/responses/Unauthorized' }
     post:
+      operationId: createAlert
       tags: [Alertas]
       summary: Crear alerta; foto opcional se transmite aparte
       description: >-
@@ -217,8 +231,9 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
         '429': { $ref: '#/components/responses/RateLimited' }
-  /alerts/snapshots:
+  /sync/alerts/snapshots:
     post:
+      operationId: createAlertSnapshot
       tags: [Alertas]
       summary: Iniciar instantánea autorizada para primera sincronización o recuperación
       description: >-
@@ -245,13 +260,14 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '503': { $ref: '#/components/responses/Unavailable' }
-  /alerts/snapshots/{snapshotId}:
+  /sync/alerts/snapshots/{snapshotId}:
     parameters:
       - name: snapshotId
         in: path
         required: true
         schema: { type: string, format: uuid }
     get:
+      operationId: getAlertSnapshotPage
       tags: [Alertas]
       summary: Continuar páginas de una instantánea coherente
       parameters:
@@ -271,13 +287,14 @@ paths:
         '410': { description: Instantánea expirada o invalidada; conservar copia anterior aislada y sin mostrar durante resincronización hasta completar el nuevo corte }
   /alerts/changes:
     get:
+      operationId: getAlertChanges
       tags: [Alertas]
       summary: Recuperar cambios posteriores a un cursor
       description: >-
         Cambios ordenados y paginados, incluidos marcadores de retirada. Un cursor
         vencido devuelve 410 y obliga a sustituir la copia local con una instantánea
         completa y consistente antes de reiniciar cambios. El cursor inicial se
-        obtiene en el corte de /alerts/snapshots. Las páginas se aplican en orden;
+        obtiene en el corte de /sync/alerts/snapshots. Las páginas se aplican en orden;
         retiradas eliminan la alerta y sus imágenes locales. La ventana de retención
         de eventos y el límite de página se determinarán con la implementación.
       parameters:
@@ -300,6 +317,7 @@ paths:
         '410': { description: Cursor vencido; ocultar copia anterior durante resincronización completa sin destruirla hasta terminar }
   /alerts/nearby:
     post:
+      operationId: findNearbyAlerts
       tags: [Geografía]
       summary: Consultar alertas cerca de un punto autorizado o manual
       description: >-
@@ -336,6 +354,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
   /routes/alerts:
     post:
+      operationId: findRouteAlerts
       tags: [Geografía]
       summary: Calcular ruta A–B y consultar alertas próximas
       description: >-
@@ -391,6 +410,7 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/AlertId' }
     get:
+      operationId: getAlert
       tags: [Alertas]
       summary: Detalle de alerta visible
       responses:
@@ -405,6 +425,7 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/AlertId' }
     post:
+      operationId: closeAlert
       tags: [Alertas]
       summary: Cerrar alerta como autor o administrador
       responses:
@@ -421,6 +442,7 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/AlertId' }
     put:
+      operationId: putMyConfirmation
       tags: [Alertas]
       summary: Crear o sustituir confirmación propia
       description: >-
@@ -446,6 +468,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
     delete:
+      operationId: deleteMyConfirmation
       tags: [Alertas]
       summary: Retirar confirmación propia
       description: Se permite retirar una respuesta propia incluso después del cierre; acceso a contenido retirado sigue sujeto a visibilidad y permisos.
@@ -456,6 +479,7 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/AlertId' }
     get:
+      operationId: getAlertPhoto
       tags: [Alertas]
       summary: Obtener foto mediante autorización de la alerta
       description: Revalidar cuenta activa y visibilidad; responder con política de caché privada que impida almacenamiento compartido.
@@ -473,6 +497,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
     put:
+      operationId: putAlertPhoto
       tags: [Alertas]
       summary: Subir o reintentar foto del autor, máximo 5 MB
       description: >-
@@ -510,6 +535,7 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/AlertId' }
     get:
+      operationId: getAlertPhotoStatus
       tags: [Alertas]
       summary: Consultar estado de carga de foto del propio reporte
       responses:
@@ -525,6 +551,7 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/AlertId' }
     post:
+      operationId: createAbuseReport
       tags: [Moderación]
       summary: Reportar abuso de una alerta
       requestBody:
@@ -546,6 +573,7 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
   /admin/abuse-reports:
     get:
+      operationId: listAbuseReports
       tags: [Moderación]
       summary: Consultar cola de moderación
       parameters:
@@ -564,6 +592,7 @@ paths:
     parameters:
       - { name: reportId, in: path, required: true, schema: { type: string, format: uuid } }
     post:
+      operationId: resolveAbuseReport
       tags: [Moderación]
       summary: Registrar resolución de reporte de abuso
       requestBody: { $ref: '#/components/requestBodies/Reason' }
@@ -580,6 +609,7 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/AlertId' }
     post:
+      operationId: withdrawAlert
       tags: [Moderación]
       summary: Retirar una alerta registrando motivo
       requestBody: { $ref: '#/components/requestBodies/Reason' }
@@ -592,6 +622,7 @@ paths:
     parameters:
       - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
     post:
+      operationId: suspendUser
       tags: [Moderación]
       summary: Suspender usuario registrando motivo
       requestBody: { $ref: '#/components/requestBodies/Reason' }
@@ -603,6 +634,7 @@ paths:
     parameters:
       - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
     post:
+      operationId: reinstateUser
       tags: [Moderación]
       summary: Rehabilitar cuenta con auditoría
       requestBody: { $ref: '#/components/requestBodies/Reason' }
@@ -614,6 +646,7 @@ paths:
     parameters:
       - { $ref: '#/components/parameters/AlertId' }
     post:
+      operationId: restoreAlert
       tags: [Moderación]
       summary: Restaurar visibilidad, sin modificar vigencia del evento
       requestBody: { $ref: '#/components/requestBodies/Reason' }
@@ -623,6 +656,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
   /admin/metrics:
     get:
+      operationId: getAdminMetrics
       tags: [Moderación]
       summary: Consultar indicadores agregados administrativos
       parameters:
@@ -691,7 +725,7 @@ components:
     RateLimited:
       description: Cuota o tasa de peticiones excedida
       headers:
-        Retry-After: { description: Espera recomendada en segundos, si se conoce, schema: { type: integer, minimum: 0 } }
+        Retry-After: { description: 'Espera recomendada en segundos, si se conoce', schema: { type: integer, minimum: 0 } }
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
@@ -829,7 +863,7 @@ components:
         resolvedAbuseReports: { type: [integer, 'null'], minimum: 0 }
         apiErrorCount: { type: [integer, 'null'], minimum: 0 }
         apiLatencyP95Ms: { type: [number, 'null'], minimum: 0 }
-        providerUsage: { type: [object, 'null'], description: Cuotas solo si el proveedor las expone, con fecha propia }
+        providerUsage: { type: [object, 'null'], description: 'Cuotas solo si el proveedor las expone, con fecha propia' }
         includesSyntheticData: { type: boolean }
     Problem:
       type: object
