@@ -1,0 +1,895 @@
+openapi: 3.1.0
+info:
+  title: TransporMap API — propuesta
+  version: 0.1.0-propuesta
+  description: >-
+    Contrato de diseño H0, no implementado. El proveedor de identidad y el formato
+    definitivo de sesión están pendientes; Bearer JWT es la integración candidata,
+    no una obligación de almacenar JWT en el dispositivo. Registro, inicio de
+    sesión, cierre y recuperación pertenecen al proveedor de identidad; no son
+    endpoints de esta API hasta decidir dicha integración. Cada solicitud protegida
+    exige token válido, cuenta activa y autorización de dominio en el servidor;
+    una suspensión remota no se conoce sin conexión. Las fotos no son públicas.
+    Los valores de límites, categorías y reglas se basan en requisitos aprobados;
+    los detalles de interoperabilidad siguen sujetos a revisión.
+servers:
+  - url: https://api.example.invalid/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Cuenta
+  - name: Alertas
+  - name: Geografía
+  - name: Moderación
+  - name: Operación
+paths:
+  /health:
+    get:
+      tags: [Operación]
+      summary: Comprobar disponibilidad básica sin revelar configuración
+      security: []
+      responses:
+        '200':
+          description: Servicio disponible; no garantiza disponibilidad de cada dependencia externa
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { const: up }
+  /me:
+    get:
+      tags: [Cuenta]
+      summary: Consultar perfil autenticado
+      responses:
+        '200':
+          description: Perfil del usuario actual
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      tags: [Cuenta]
+      summary: Actualizar alias
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [alias]
+              properties:
+                alias: { type: string, minLength: 2, maxLength: 80 }
+      responses:
+        '200':
+          description: Perfil actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profile' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /me/zones:
+    get:
+      tags: [Cuenta]
+      summary: Consultar zonas y preferencias de avisos
+      responses:
+        '200':
+          description: Zonas elegidas y preferencias del usuario
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ZonePreferences' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Cuenta]
+      summary: Reemplazar zonas y preferencias de avisos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ZonePreferences' }
+      responses:
+        '200':
+          description: Preferencias guardadas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ZonePreferences' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /me/offline-authorization:
+    get:
+      tags: [Cuenta]
+      summary: Obtener autorización local limitada para una cuenta activa
+      description: >-
+        Propuesta para habilitar acceso local durante como máximo siete días
+        desde validación en línea. La prueba íntegra debe poder verificarse en el
+        cliente y estar vinculada a la cuenta; diseño criptográfico definitivo y
+        protección local pendientes. No permite detectar suspensión remota sin red
+        ni concede acceso a otras cuentas. La sesión y cada envío se revalidan en línea.
+      responses:
+        '200':
+          description: Datos para evaluar duración y titularidad de acceso offline
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OfflineAuthorization' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /me/privacy-requests:
+    post:
+      tags: [Cuenta]
+      summary: Registrar solicitud del titular sobre datos personales
+      description: >-
+        Registro de consulta, corrección o supresión para atención por el responsable;
+        no ejecuta una supresión automática ni determina procedencia jurídica.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requestType, detail]
+              properties:
+                requestType: { type: string, enum: [access, correction, deletion, other] }
+                detail: { type: string, minLength: 1, maxLength: 2000 }
+      responses:
+        '202':
+          description: Solicitud recibida para gestión; no confirma que haya sido resuelta
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, receivedAt]
+                properties:
+                  id: { type: string, format: uuid }
+                  receivedAt: { type: string, format: date-time }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /alerts:
+    get:
+      tags: [Alertas]
+      summary: Consultar alertas visibles con filtros
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [active, expired, closed] } }
+        - { name: category, in: query, schema: { $ref: '#/components/schemas/Category' } }
+        - { name: severity, in: query, schema: { type: string, enum: [low, medium, high, unknown] } }
+        - { name: impact, in: query, schema: { type: string, enum: [open, partial, closed, unknown] } }
+        - { name: zoneId, in: query, schema: { type: string }, description: Identificador de zona; modelo pendiente }
+        - { name: observedFrom, in: query, schema: { type: string, format: date-time } }
+        - { name: observedUntil, in: query, schema: { type: string, format: date-time } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+      responses:
+        '200':
+          description: Página de alertas visibles
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AlertPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Alertas]
+      summary: Crear alerta; foto opcional se transmite aparte
+      description: >-
+        El cliente conserva clientReportId y cuerpo estables para reintentos. El
+        servidor confirma el mismo resultado ante un reintento idéntico mientras
+        conserva evidencia suficiente, y solo si la cuenta conserva acceso a la
+        alerta. Un reintento tras retirada, suspensión o revocación no devuelve
+        contenido ya no autorizado ni crea otra alerta: recibe una respuesta segura
+        403 o 404 según el caso. Reutilizar la identidad o clave con otro contenido
+        causa conflicto. Ante un reintento antiguo sin evidencia suficiente debe
+        rechazarlo de forma recuperable, conservar el borrador y solicitar una
+        decisión informada, sin crear un duplicado silencioso. El alcance y la
+        duración de la evidencia tras eliminar alertas siguen sin resolverse; no se
+        garantiza idempotencia indefinida. La hora observada más
+        de cinco minutos posterior a la del servidor causa error corregible; el
+        cliente conserva borrador y foto sin cambiar silenciosamente la hora.
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateAlert' }
+            example:
+              clientReportId: 4c5208fa-1cbd-4fa7-aec9-2c306c408f78
+              title: Cierre vial de demostración
+              description: Datos sintéticos para mostrar el flujo de una alerta.
+              category: full_closure
+              impact: closed
+              severity: unknown
+              photoIntent: pending
+              location: { latitude: 10.99, longitude: -74.80 }
+              observedAt: '2026-01-02T14:30:00Z'
+      responses:
+        '201':
+          description: Alerta aceptada; reintento devuelve el resultado original
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Alert' }
+        '200':
+          description: Resultado previo de un reintento idéntico ya aceptado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Alert' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /alerts/snapshots:
+    post:
+      tags: [Alertas]
+      summary: Iniciar instantánea autorizada para primera sincronización o recuperación
+      description: >-
+        Inicia una instantánea coherente del conjunto visible para la cuenta, sin
+        mezclar páginas de momentos distintos. En cada página revalida cuenta y
+        visibilidad. Una retirada o cambio de autorización que afecte a la instantánea
+        la invalida y obliga a recomenzar; no se entrega su contenido retirado.
+        El servidor devuelve el primer lote,
+        un cursor de página y un cursor de cambios correspondiente al mismo corte.
+        El cliente debe mantener la copia anterior hasta descargar todas las páginas,
+        sustituirla de forma atómica y solo entonces aplicar cambios desde el cursor
+        de corte. Al recibir 410, el cliente mantiene la copia anterior aislada sin
+        mostrarla mientras recompone el estado autorizado; no la destruye hasta
+        completar la nueva instantánea y aplicar las retiradas posteriores al corte.
+        Una instantánea expirada o invalidada debe reiniciarse; su TTL exacto está
+        pendiente. La retirada después de completar una respuesta se propaga en
+        cambios; offline no existe revocación remota inmediata.
+      responses:
+        '200':
+          description: Primera página y cursores vinculados a cuenta y corte
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SnapshotPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /alerts/snapshots/{snapshotId}:
+    parameters:
+      - name: snapshotId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Alertas]
+      summary: Continuar páginas de una instantánea coherente
+      parameters:
+        - name: pageCursor
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Página del mismo corte; una página sin nextPageCursor completa la instantánea
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SnapshotPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '410': { description: Instantánea expirada o invalidada; conservar copia anterior aislada y sin mostrar durante resincronización hasta completar el nuevo corte }
+  /alerts/changes:
+    get:
+      tags: [Alertas]
+      summary: Recuperar cambios posteriores a un cursor
+      description: >-
+        Cambios ordenados y paginados, incluidos marcadores de retirada. Un cursor
+        vencido devuelve 410 y obliga a sustituir la copia local con una instantánea
+        completa y consistente antes de reiniciar cambios. El cursor inicial se
+        obtiene en el corte de /alerts/snapshots. Las páginas se aplican en orden;
+        retiradas eliminan la alerta y sus imágenes locales. La ventana de retención
+        de eventos y el límite de página se determinarán con la implementación.
+      parameters:
+        - { name: cursor, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Página ordenada de cambios y retiradas posteriores al cursor
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [changes, nextCursor, hasMore]
+                properties:
+                  changes:
+                    type: array
+                    items: { $ref: '#/components/schemas/AlertChange' }
+                  nextCursor: { type: string }
+                  hasMore: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '410': { description: Cursor vencido; ocultar copia anterior durante resincronización completa sin destruirla hasta terminar }
+  /alerts/nearby:
+    post:
+      tags: [Geografía]
+      summary: Consultar alertas cerca de un punto autorizado o manual
+      description: >-
+        El punto se envía por HTTPS en el cuerpo, no en la URL. Cliente, backend
+        y proxies no deben registrar cuerpos ni coordenadas en logs, telemetría o
+        referencias, y deben impedir cachés compartidas. HTTPS y POST no impiden por
+        sí mismos la exposición a un proveedor o un proxy configurado incorrectamente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [center]
+              properties:
+                center: { $ref: '#/components/schemas/Point' }
+                radiusMeters: { type: integer, minimum: 1, default: 20000 }
+                category: { $ref: '#/components/schemas/Category' }
+                status: { type: string, enum: [active, expired, closed] }
+                severity: { type: string, enum: [low, medium, high, unknown] }
+                cursor: { type: string }
+                limit: { type: integer, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        '200':
+          description: Resultados de cercanía, no de ruta
+          headers:
+            Cache-Control:
+              description: No almacenar en cachés compartidas ni del navegador esta respuesta contextual.
+              schema: { type: string, example: 'private, no-store' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AlertPage' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /routes/alerts:
+    post:
+      tags: [Geografía]
+      summary: Calcular ruta A–B y consultar alertas próximas
+      description: >-
+        Propuesta inicial de un trayecto. Si no se obtiene una ruta, el cliente
+        ofrece consulta de cercanía indicando el cambio. No certifica aptitud para carga.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [origin, destination]
+              properties:
+                origin: { $ref: '#/components/schemas/Point' }
+                destination: { $ref: '#/components/schemas/Point' }
+                corridorMeters: { type: integer, minimum: 1, default: 1000 }
+                category: { $ref: '#/components/schemas/Category' }
+                status: { type: string, enum: [active, expired, closed] }
+                severity: { type: string, enum: [low, medium, high, unknown] }
+                cursor: { type: string, description: Continuación vinculada a ruta y filtros }
+                limit: { type: integer, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        '200':
+          description: Ruta seleccionada y alertas asociadas
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [geometry, alerts, complete]
+                properties:
+                  geometry:
+                    type: object
+                    description: GeoJSON LineString; restricciones y validación a detallar
+                    required: [type, coordinates]
+                    properties:
+                      type: { const: LineString }
+                      coordinates:
+                        type: array
+                        items:
+                          type: array
+                          minItems: 2
+                          maxItems: 2
+                          items: { type: number }
+                  alerts:
+                    type: array
+                    items: { $ref: '#/components/schemas/Alert' }
+                  nextCursor: { type: [string, 'null'] }
+                  complete: { type: boolean, description: Verdadero solo en la última página si se procesó la ruta sin errores }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /alerts/{alertId}:
+    parameters:
+      - { $ref: '#/components/parameters/AlertId' }
+    get:
+      tags: [Alertas]
+      summary: Detalle de alerta visible
+      responses:
+        '200':
+          description: Alerta
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Alert' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /alerts/{alertId}/close:
+    parameters:
+      - { $ref: '#/components/parameters/AlertId' }
+    post:
+      tags: [Alertas]
+      summary: Cerrar alerta como autor o administrador
+      responses:
+        '200':
+          description: Estado de cierre confirmado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Alert' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /alerts/{alertId}/confirmation:
+    parameters:
+      - { $ref: '#/components/parameters/AlertId' }
+    put:
+      tags: [Alertas]
+      summary: Crear o sustituir confirmación propia
+      description: >-
+        El autor no puede confirmar su propia alerta. No se crean ni modifican
+        confirmaciones en alertas cerradas, vencidas o retiradas. Un PUT idéntico
+        conserva el instante previo. Las cuentas suspendidas no pueden contribuir.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              properties:
+                value: { type: string, enum: [still_active, no_longer_active] }
+      responses:
+        '200':
+          description: Confirmación actual; operación repetida no duplica voto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Confirmation' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [Alertas]
+      summary: Retirar confirmación propia
+      description: Se permite retirar una respuesta propia incluso después del cierre; acceso a contenido retirado sigue sujeto a visibilidad y permisos.
+      responses:
+        '204': { description: Confirmación retirada o inexistente }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /alerts/{alertId}/photo:
+    parameters:
+      - { $ref: '#/components/parameters/AlertId' }
+    get:
+      tags: [Alertas]
+      summary: Obtener foto mediante autorización de la alerta
+      description: Revalidar cuenta activa y visibilidad; responder con política de caché privada que impida almacenamiento compartido.
+      responses:
+        '200':
+          description: Contenido protegido de imagen, sin URL pública permanente
+          headers:
+            Cache-Control:
+              description: Impedir almacenamiento compartido de contenido protegido.
+              schema: { type: string, example: 'private, no-store' }
+          content:
+            image/jpeg: {}
+            image/png: {}
+            image/webp: {}
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Alertas]
+      summary: Subir o reintentar foto del autor, máximo 5 MB
+      description: >-
+        Revalidar cuenta activa y alerta no retirada antes de asociar; distinguir
+        fallos recuperables y rechazos definitivos, limpiar archivos huérfanos y
+        conservar identidad estable ante reintentos tardíos.
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: {}
+            encoding:
+              file:
+                contentType: 'image/jpeg, image/png, image/webp'
+      responses:
+        '200':
+          description: Foto asociada, original y derivados sujetos a política
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PhotoStatus' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '413': { description: Imagen excede el límite }
+        '415': { description: Formato de archivo no admitido }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /alerts/{alertId}/photo/status:
+    parameters:
+      - { $ref: '#/components/parameters/AlertId' }
+    get:
+      tags: [Alertas]
+      summary: Consultar estado de carga de foto del propio reporte
+      responses:
+        '200':
+          description: Estado y posibilidad de reintento
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PhotoStatus' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /alerts/{alertId}/abuse-reports:
+    parameters:
+      - { $ref: '#/components/parameters/AlertId' }
+    post:
+      tags: [Moderación]
+      summary: Reportar abuso de una alerta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 500 }
+      responses:
+        '201':
+          description: Reporte recibido sin exponer identidad del denunciante a otros usuarios
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AbuseReportReceipt' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /admin/abuse-reports:
+    get:
+      tags: [Moderación]
+      summary: Consultar cola de moderación
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [pending, reviewing, resolved] } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+      responses:
+        '200':
+          description: Cola paginada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AbuseReportPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/abuse-reports/{reportId}/resolve:
+    parameters:
+      - { name: reportId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [Moderación]
+      summary: Registrar resolución de reporte de abuso
+      requestBody: { $ref: '#/components/requestBodies/Reason' }
+      responses:
+        '200':
+          description: Resolución registrada con actor y fecha
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AbuseReport' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /admin/alerts/{alertId}/withdraw:
+    parameters:
+      - { $ref: '#/components/parameters/AlertId' }
+    post:
+      tags: [Moderación]
+      summary: Retirar una alerta registrando motivo
+      requestBody: { $ref: '#/components/requestBodies/Reason' }
+      responses:
+        '200': { description: Retirada y auditoría confirmadas }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /admin/users/{userId}/suspend:
+    parameters:
+      - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [Moderación]
+      summary: Suspender usuario registrando motivo
+      requestBody: { $ref: '#/components/requestBodies/Reason' }
+      responses:
+        '200': { description: Suspensión y auditoría confirmadas }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/users/{userId}/reinstate:
+    parameters:
+      - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [Moderación]
+      summary: Rehabilitar cuenta con auditoría
+      requestBody: { $ref: '#/components/requestBodies/Reason' }
+      responses:
+        '200': { description: Rehabilitación registrada }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/alerts/{alertId}/restore:
+    parameters:
+      - { $ref: '#/components/parameters/AlertId' }
+    post:
+      tags: [Moderación]
+      summary: Restaurar visibilidad, sin modificar vigencia del evento
+      requestBody: { $ref: '#/components/requestBodies/Reason' }
+      responses:
+        '200': { description: Restauración registrada; no reabre la alerta }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/metrics:
+    get:
+      tags: [Moderación]
+      summary: Consultar indicadores agregados administrativos
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: until, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: Indicadores agregados y fecha de medición; ausencia no representa cero
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Metrics' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    AlertId: { name: alertId, in: path, required: true, schema: { type: string, format: uuid } }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 16, maxLength: 128 }
+      description: Clave estable para el mismo intento y usuario; reutilizar con otro contenido produce conflicto.
+  requestBodies:
+    Reason:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [reason]
+            properties:
+              reason: { type: string, minLength: 1, maxLength: 500 }
+  responses:
+    BadRequest:
+      description: Entrada inválida u observación más de cinco minutos en el futuro; conservar borrador y solicitar corrección sin cambiar la hora
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: Sesión ausente, vencida o inválida
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Usuario sin permiso o cuenta suspendida
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Recurso inexistente o no visible
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: Estado incompatible o clave idempotente reutilizada con otros datos
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: 'https://example.invalid/problems/conflict'
+            title: La operación no se pudo aplicar
+            status: 409
+            detail: Revisa el estado de la alerta o conserva el borrador para reintentar.
+    RateLimited:
+      description: Cuota o tasa de peticiones excedida
+      headers:
+        Retry-After: { description: Espera recomendada en segundos, si se conoce, schema: { type: integer, minimum: 0 } }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unavailable:
+      description: Servicio externo temporalmente no disponible
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    Point:
+      type: object
+      required: [latitude, longitude]
+      properties:
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+    Category:
+      type: string
+      enum: [poor_road, full_closure, partial_closure, accident, landslide_flood, roadworks, freight_restriction]
+    Profile:
+      type: object
+      required: [id, alias, role]
+      properties:
+        id: { type: string, format: uuid }
+        alias: { type: string }
+        role: { type: string, enum: [user, admin] }
+    OfflineAuthorization:
+      type: object
+      required: [accountId, validatedAt, validUntil, proof]
+      properties:
+        accountId: { type: string, format: uuid }
+        validatedAt: { type: string, format: date-time }
+        validUntil: { type: string, format: date-time, description: No excede siete días después de validatedAt }
+        proof: { type: string, description: Prueba íntegra vinculada a cuenta; formato y ciclo de claves pendientes }
+    ZonePreferences:
+      type: object
+      required: [zones, notificationsEnabled]
+      properties:
+        zones:
+          type: array
+          items: { $ref: '#/components/schemas/Zone' }
+        notificationsEnabled: { type: boolean }
+    Zone:
+      type: object
+      description: Zona circular candidata; límites exactos y otras geometrías sujetos a diseño.
+      required: [id, name, center, radiusMeters]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 100 }
+        center: { $ref: '#/components/schemas/Point' }
+        radiusMeters: { type: integer, minimum: 1 }
+    SnapshotPage:
+      type: object
+      description: >-
+        Todas las páginas comparten snapshotId y changeCursor para el mismo corte.
+        nextPageCursor nulo identifica la última página, no una lista vacía por fallo.
+      required: [snapshotId, items, nextPageCursor, changeCursor]
+      properties:
+        snapshotId: { type: string, format: uuid }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Alert' }
+        nextPageCursor: { type: [string, 'null'] }
+        changeCursor: { type: string }
+    AlertChange:
+      description: Una actualización incluye la alerta; una retirada solo transmite su identificador.
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [alertId, changeType, alert]
+          properties:
+            alertId: { type: string, format: uuid }
+            changeType: { const: upsert }
+            alert: { $ref: '#/components/schemas/Alert' }
+        - type: object
+          additionalProperties: false
+          required: [alertId, changeType]
+          properties:
+            alertId: { type: string, format: uuid }
+            changeType: { const: removed }
+    Confirmation:
+      type: object
+      required: [value, updatedAt]
+      properties:
+        value: { type: string, enum: [still_active, no_longer_active] }
+        updatedAt: { type: string, format: date-time }
+    PhotoStatus:
+      type: object
+      description: Estado de foto en el servidor; el cliente también conserva su estado local de carga.
+      required: [status, retryable]
+      properties:
+        status: { type: string, enum: [none, pending, available, rejected] }
+        retryable: { type: boolean }
+        reason: { type: [string, 'null'], description: Motivo apto para usuario; sin detalles internos }
+    AbuseReportReceipt:
+      type: object
+      required: [id, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [pending, reviewing, resolved] }
+        createdAt: { type: string, format: date-time }
+    AbuseReport:
+      type: object
+      required: [id, alertId, reason, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        alertId: { type: string, format: uuid }
+        reason: { type: string }
+        status: { type: string, enum: [pending, reviewing, resolved] }
+        createdAt: { type: string, format: date-time }
+        resolvedAt: { type: [string, 'null'], format: date-time }
+        resolution: { type: [string, 'null'] }
+    AbuseReportPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AbuseReport' }
+        nextCursor: { type: [string, 'null'] }
+    Metrics:
+      type: object
+      description: Indicadores agregados. Un valor desconocido se representa como null, no cero.
+      required: [from, until, measuredAt, alertsByCategory, alertsByStatus, pendingAbuseReports, resolvedAbuseReports]
+      properties:
+        from: { type: string, format: date-time }
+        until: { type: string, format: date-time }
+        measuredAt: { type: string, format: date-time }
+        alertsByCategory:
+          type: [object, 'null']
+          additionalProperties: { type: integer, minimum: 0 }
+        alertsByStatus:
+          type: [object, 'null']
+          additionalProperties: { type: integer, minimum: 0 }
+        pendingAbuseReports: { type: [integer, 'null'], minimum: 0 }
+        resolvedAbuseReports: { type: [integer, 'null'], minimum: 0 }
+        apiErrorCount: { type: [integer, 'null'], minimum: 0 }
+        apiLatencyP95Ms: { type: [number, 'null'], minimum: 0 }
+        providerUsage: { type: [object, 'null'], description: Cuotas solo si el proveedor las expone, con fecha propia }
+        includesSyntheticData: { type: boolean }
+    Problem:
+      type: object
+      description: Detalles sin tokens, credenciales, correo ni información privada de terceros.
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail: { type: string }
+        instance: { type: string, format: uri-reference }
+        code: { type: string, description: Código estable de negocio por definir en contrato final }
+    CreateAlert:
+      type: object
+      additionalProperties: false
+      required: [clientReportId, title, description, category, impact, severity, location, observedAt, photoIntent]
+      properties:
+        clientReportId: { type: string, format: uuid, description: Identidad estable generada antes de guardar offline; unicidad ligada al autor }
+        title: { type: string, minLength: 5, maxLength: 100 }
+        description: { type: string, minLength: 10, maxLength: 500 }
+        category: { $ref: '#/components/schemas/Category' }
+        impact: { type: string, enum: [open, partial, closed, unknown] }
+        severity: { type: string, enum: [low, medium, high, unknown] }
+        location: { $ref: '#/components/schemas/Point' }
+        observedAt: { type: string, format: date-time }
+        photoIntent: { type: string, enum: [none, pending], description: Indica si hay una foto que se enviará por separado; no afirma que ya exista en el servidor }
+        roadName: { type: [string, 'null'] }
+        segmentStart: { oneOf: [{ $ref: '#/components/schemas/Point' }, { type: 'null' }] }
+        segmentEnd: { oneOf: [{ $ref: '#/components/schemas/Point' }, { type: 'null' }] }
+    Alert:
+      type: object
+      additionalProperties: false
+      description: Vista para cuentas autorizadas; no expone clientReportId ni correo del autor.
+      required: [id, title, description, category, impact, severity, location, observedAt, authorAlias, receivedAt, expiresAt, status, photoStatus, stillActiveCount, noLongerActiveCount]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        category: { $ref: '#/components/schemas/Category' }
+        impact: { type: string, enum: [open, partial, closed, unknown] }
+        severity: { type: string, enum: [low, medium, high, unknown] }
+        location: { $ref: '#/components/schemas/Point' }
+        observedAt: { type: string, format: date-time }
+        roadName: { type: [string, 'null'] }
+        segmentStart: { oneOf: [{ $ref: '#/components/schemas/Point' }, { type: 'null' }] }
+        segmentEnd: { oneOf: [{ $ref: '#/components/schemas/Point' }, { type: 'null' }] }
+        authorAlias: { type: string }
+        receivedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        status: { type: string, enum: [active, expired, closed] }
+        photoStatus: { type: string, enum: [none, pending, available, rejected] }
+        stillActiveCount: { type: integer, minimum: 0 }
+        noLongerActiveCount: { type: integer, minimum: 0 }
+        latestConfirmationAt: { type: [string, 'null'], format: date-time }
+        closureReason: { type: [string, 'null'] }
+    AlertPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Alert' }
+        nextCursor: { type: [string, 'null'] }

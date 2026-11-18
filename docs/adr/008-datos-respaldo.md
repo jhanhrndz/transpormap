@@ -1,0 +1,3 @@
+# ADR 008 — Respaldos y eliminación
+
+**Estado:** propuesto, no demostrado. **Contexto:** metas RPO 24 h/RTO 4 h y retención de 30 días aceptadas como objetivos sujetos a viabilidad. **Opciones:** copias nativas del proveedor o exportación independiente cifrada de BD y objetos. **Decisión candidata:** exportación independiente, con restauración probada, rotación y reaplicación de eliminaciones; no hay destino ni automatización aprobados. **Consecuencias:** mantenimiento y consumo de cuota; Supabase Free no incluye backups automáticos y ventana Neon Free no basta para 30 días. No prometer objetivo sin ensayo y coste comprobado.

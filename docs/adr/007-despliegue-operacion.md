@@ -1,0 +1,3 @@
+# ADR 007 — Hosting y automatización
+
+**Estado:** propuesto, condicionado. **Contexto:** demo de portafolio COP 0, Spring Boot y revisión mediante PR. **Opciones:** Render Free frente a Koyeb/Railway; Cloudflare Pages frente a Firebase Hosting; GitHub Actions frente a GitLab CI. **Decisión candidata:** Render para demo, Pages y Actions, solo si no existe riesgo de cargo automático y los términos lo permiten. **Consecuencias:** Render desaconseja Free para producción, suspende por inactividad y puede generar cargos por cuota; Koyeb exige tarjeta y comunica cargo. Sin prueba de costo cero no se despliega ni se declara producción confiable.

@@ -1,0 +1,3 @@
+# ADR 001 — Plataforma y cliente
+
+**Estado:** propuesto. **Contexto:** transportistas con Android, offline/foto y acceso de portafolio por enlace, con un mantenedor y coste cero. **Opciones:** PWA React/TypeScript; Flutter/React Native con paquetes móviles y posible panel web; Vue como cliente web alternativo. **Decisión candidata:** PWA React/TypeScript por experiencia previa, distribución y mantenimiento. **Consecuencias:** pérdida/desalojo de datos y sincronización en segundo plano son riesgos; pruebas reales y condiciones de cambio de plataforma obligatorias. iOS no acreditado. Ver comparativa y fuentes en [arquitectura](../02-stack-y-arquitectura.md).
