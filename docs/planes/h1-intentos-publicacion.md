@@ -1,6 +1,6 @@
 # H1 — Diseño de intentos de publicación
 
-**Estado:** diseño técnico del ajuste aprobado para H1. Existe un adaptador parcial IndexedDB con pruebas simuladas; no hay transporte ni recuperación automática, y este diseño aún no está acreditado en navegador real. Amplía la [arquitectura del cliente](../05-arquitectura-detallada-frontend.md) sin dar por terminada la cola offline de H5.
+**Estado:** diseño técnico del ajuste aprobado para H1. Existen adaptadores parciales IndexedDB y Web Locks y un coordinador experimental con pruebas simuladas; no hay transporte ni recuperación automática, y este diseño aún no está acreditado en navegador real. Métodos del almacenamiento pueden eludir el coordinador; el callback tampoco recibe todavía el snapshot autenticado. Resolver ambos antes de conectar envíos. Amplía la [arquitectura del cliente](../05-arquitectura-detallada-frontend.md) sin dar por terminada la cola offline de H5.
 
 ## Alcance y datos
 
