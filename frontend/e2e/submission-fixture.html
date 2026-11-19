@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+  <head><meta charset="utf-8"><title>Fixture de coordinación</title></head>
+  <body>
+    <span data-ready>loading</span>
+    <script type="module">
+      import { createSubmissionStore } from '/src/alerts/submissionStore.ts';
+      import { createBrowserSubmissionLock } from '/src/alerts/submissionLock.ts';
+      import { createSubmissionCoordinator } from '/src/alerts/submissionCoordinator.ts';
+
+      const owner = { issuer: 'https://identity.example', subject: 'synthetic-user' };
+      const id = '4c5208fa-1cbd-4fa7-aec9-2c306c408f78';
+      const prepared = { idempotencyKey: 'synthetic-key', body: JSON.stringify({ clientReportId: id }) };
+      const store = createSubmissionStore(indexedDB, 'transpormap-e2e');
+      const coordinator = createSubmissionCoordinator(store, createBrowserSubmissionLock());
+      let signalStarted;
+      let releaseWork;
+      let operation;
+      const started = new Promise(resolve => { signalStarted = resolve; });
+      const workReleased = new Promise(resolve => { releaseWork = resolve; });
+
+      window.harness = {
+        save: () => store.save(owner, prepared),
+        start: () => {
+          operation = coordinator.run(owner, id, async snapshot => {
+            if (snapshot.body !== prepared.body || snapshot.idempotencyKey !== prepared.idempotencyKey) {
+              throw new Error('El intento no coincide con los datos guardados.');
+            }
+            signalStarted();
+            await workReleased;
+            return 'done';
+          });
+        },
+        waitForStart: () => started,
+        release: () => releaseWork(),
+        result: () => operation,
+        recover: () => coordinator.markInterrupted(owner, id),
+        status: async () => (await store.get(owner, id))?.status,
+      };
+      document.querySelector('[data-ready]').textContent = 'ready';
+    </script>
+  </body>
+</html>
