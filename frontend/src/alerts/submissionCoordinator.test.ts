@@ -113,4 +113,53 @@ describe('submission coordinator', () => {
     expect(await coordinator.markInterrupted(owner, id)).toEqual({ status: 'completed', value: { status: 'uncertain' } });
     expect((await store.get(owner, id))?.status).toBe('uncertain');
   });
+
+  it('delivers only the immutable saved body and key to work after claiming', async () => {
+    const store = createSubmissionStore(new IDBFactory(), 'test');
+    await store.save(owner, prepared);
+    const coordinator = createSubmissionCoordinator(store, createSubmissionLock(locks(), crypto.subtle));
+    const work = vi.fn(async (snapshot: Readonly<{ body: string; idempotencyKey: string }>) => {
+      expect(snapshot).toEqual(prepared);
+      expect(Object.isFrozen(snapshot)).toBe(true);
+      expect((await store.get(owner, id))?.status).toBe('sending');
+      return 'done';
+    });
+    await coordinator.run(owner, id, work);
+    expect(work).toHaveBeenCalledOnce();
+    expect((await store.get(owner, id))?.body).toBe(prepared.body);
+    expect((await store.get(owner, id))?.idempotencyKey).toBe(prepared.idempotencyKey);
+  });
+
+  it('does not supply a request when the composite key differs', async () => {
+    const store = createSubmissionStore(new IDBFactory(), 'test');
+    await store.save(owner, prepared);
+    const otherOwner = { ...owner, subject: 'two' };
+    const coordinator = createSubmissionCoordinator(store, createSubmissionLock(locks(), crypto.subtle));
+    const work = vi.fn(async () => {});
+    expect(await coordinator.run(otherOwner, id, work)).toEqual({ status: 'completed', value: { status: 'not-prepared' } });
+    expect(work).not.toHaveBeenCalled();
+    expect((await store.get(owner, id))?.status).toBe('prepared');
+  });
+
+  it('does not supply a snapshot if the lock request fails', async () => {
+    const store = createSubmissionStore(new IDBFactory(), 'test');
+    await store.save(owner, prepared);
+    const failing: LockProvider = { request: async () => { throw new Error('lock failed'); } };
+    const coordinator = createSubmissionCoordinator(store, createSubmissionLock(failing, crypto.subtle));
+    const work = vi.fn(async () => {});
+    await expect(coordinator.run(owner, id, work)).rejects.toThrow('lock failed');
+    expect(work).not.toHaveBeenCalled();
+    expect((await store.get(owner, id))?.status).toBe('prepared');
+  });
+
+  it('does not invoke work if rereading the claimed record fails', async () => {
+    const store = createSubmissionStore(new IDBFactory(), 'test');
+    await store.save(owner, prepared);
+    const failingStore = { ...store, get: async () => { throw new Error('read failed'); } };
+    const coordinator = createSubmissionCoordinator(failingStore, createSubmissionLock(locks(), crypto.subtle));
+    const work = vi.fn(async () => {});
+    await expect(coordinator.run(owner, id, work)).rejects.toThrow('read failed');
+    expect(work).not.toHaveBeenCalled();
+    expect((await store.get(owner, id))?.status).toBe('uncertain');
+  });
 });

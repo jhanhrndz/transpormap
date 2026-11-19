@@ -1,18 +1,24 @@
 import type { createSubmissionLock } from './submissionLock';
 import type { createSubmissionStore, SubmissionOwner } from './submissionStore';
+import type { PreparedAlert } from './prepareAlert';
 
 type Store = Pick<ReturnType<typeof createSubmissionStore>, 'claim' | 'get' | 'markUncertain'>;
 type Lock = ReturnType<typeof createSubmissionLock>;
 
 export function createSubmissionCoordinator(store: Store, lock: Lock) {
   return {
-    async run<T>(owner: SubmissionOwner, reportId: string, work: () => Promise<T>) {
+    async run<T>(owner: SubmissionOwner, reportId: string, work: (snapshot: PreparedAlert) => Promise<T>) {
       const identity = { issuer: owner.issuer, subject: owner.subject };
       return lock.run(identity, reportId, async () => {
         if (!await store.claim(identity, reportId)) return { status: 'not-prepared' as const };
         let result: T;
         try {
-          result = await work();
+          const submission = await store.get(identity, reportId);
+          if (!submission || submission.status !== 'sending') {
+            throw new Error('No se encontró el intento reclamado.');
+          }
+          const snapshot = Object.freeze({ body: submission.body, idempotencyKey: submission.idempotencyKey });
+          result = await work(snapshot);
         } catch (workError) {
           try { await store.markUncertain(identity, reportId); }
           catch (storageError) { throw new AggregateError([workError, storageError], 'El trabajo y la actualización local fallaron.'); }
