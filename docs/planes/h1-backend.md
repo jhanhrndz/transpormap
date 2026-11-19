@@ -120,7 +120,7 @@ interface AlertApplicationService {
 
 ## Tarea 1 — Dominio de alerta y reglas temporales
 
-**Archivos previstos:** existen `AlertCategory.java`, `AlertTimeRules.java` y `AlertTimeRulesTest.java` bajo `backend/src/`; los demás tipos y pruebas de esta tarea permanecen pendientes: `RoadImpact`, `Severity`, `AlertStatus`, `PhotoIntent`, `PhotoStatus`, `GeoPoint`, `CreateAlertCommand` y `GeoPointTest`.
+**Archivos previstos:** existen `AlertCategory.java`, `AlertTimeRules.java`, `GeoPoint.java`, sus pruebas y el mapeo de categoría bajo `backend/src/`; los demás tipos y pruebas de esta tarea permanecen pendientes: `RoadImpact`, `Severity`, `AlertStatus`, `PhotoIntent`, `PhotoStatus` y `CreateAlertCommand`.
 
 **Consume:** valores `Category`, `Point` y `CreateAlert` del contrato; `java.time.Clock`. **Produce:** `AlertTimeRules.validateObservedAt(Instant observedAt, Clock clock)` y `AlertTimeRules.expiresAt(AlertCategory category, Instant observedAt)`, más validación de `GeoPoint`.
 
