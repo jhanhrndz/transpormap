@@ -14,7 +14,7 @@ let factory: IDBFactory;
 beforeEach(() => { factory = new IDBFactory(); });
 
 describe('IndexedDB submission store', () => {
-  it('retains the exact request across reopened stores and isolates owner identities', async () => {
+  it('retains the exact request and separates records by their composite key', async () => {
     const first = createSubmissionStore(factory, 'test');
     await first.save(account, prepared);
     const reopened = createSubmissionStore(factory, 'test');
@@ -31,19 +31,19 @@ describe('IndexedDB submission store', () => {
     expect((await store.get(account, 'report-1'))?.body).toBe(prepared.body);
   });
 
-  it('permits only one concurrent claim and retains identifiers after uncertainty', async () => {
+  it('permits one concurrent claim and allows another store to mark it uncertain', async () => {
     const first = createSubmissionStore(factory, 'test');
     const second = createSubmissionStore(factory, 'test');
     await first.save(account, prepared);
     const claims = await Promise.all([first.claim(account, 'report-1'), second.claim(account, 'report-1')]);
     expect(claims.filter(Boolean)).toHaveLength(1);
-    const afterRestart = createSubmissionStore(factory, 'test');
-    await afterRestart.markUncertain(account, 'report-1');
-    expect(await afterRestart.get(account, 'report-1')).toMatchObject({ ...prepared, status: 'uncertain' });
-    expect(await afterRestart.claim(account, 'report-1')).toBe(false);
+    const anotherStore = createSubmissionStore(factory, 'test');
+    await anotherStore.markUncertain(account, 'report-1');
+    expect(await anotherStore.get(account, 'report-1')).toMatchObject({ ...prepared, status: 'uncertain' });
+    expect(await anotherStore.claim(account, 'report-1')).toBe(false);
   });
 
-  it('does not let another account claim or change an operation', async () => {
+  it('does not claim or change a record when a different composite key is supplied', async () => {
     const store = createSubmissionStore(factory, 'test');
     await store.save(account, prepared);
     expect(await store.claim(otherAccount, 'report-1')).toBe(false);

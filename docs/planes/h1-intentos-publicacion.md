@@ -24,6 +24,10 @@ Si falla el guardado de la confirmación tras una respuesta satisfactoria, conse
 
 El cliente necesita un reclamo atómico para impedir que dos pestañas envíen simultáneamente el mismo intento. Esto no sustituye la restricción transaccional del servidor por `(autor, clientReportId)`, ni garantiza deduplicación después de purgar evidencia. Reutilizar el cuerpo y la clave originales, nunca regenerarlos silenciosamente. La consulta de resultado, clasificación verificable de errores, retención de evidencia y acciones específicas de revisión manual aún deben definirse en API y probarse. No habilitar un reintento automático cuando no pueda demostrarse que es seguro.
 
+**Coordinación candidata, no acreditada:** evaluar Web Locks exclusivo por operación, con un nombre opaco que no revele datos de la cuenta. Ese nombre debe ser estable y compartido entre las pestañas para la misma operación; su construcción sigue pendiente de diseño y prueba. Todas las rutas participantes mantendrían el mismo bloqueo desde antes del reclamo hasta completar el transporte y guardar su resultado. Una recuperación solo podría intervenir tras adquirir ese bloqueo y volver a leer el estado en una transacción IndexedDB; si está ocupado, no debe modificar la operación. No usar `steal`. Si la API no está disponible o falla, conservar el intento y deshabilitar el envío y la recuperación automáticos; no usar un tiempo de espera como prueba de que otra pestaña terminó. Esta propuesta depende de que todas las rutas cooperen y requiere pruebas en dos pestañas y en Android real, incluidos cierres, suspensión y errores de persistencia. [Web Locks API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API).
+
+La liberación o adquisición de un bloqueo **no indica si el servidor recibió o guardó la alerta**. Un resultado incierto se conserva y no se reenvía automáticamente sin evidencia suficiente. La prueba actual con `fake-indexeddb` usa varias instancias dentro de un proceso; no acredita reinicio real ni coordinación entre pestañas.
+
 ## Pruebas de aceptación pendientes
 
 - Fallo de transacción local o cuota: se comunica el error y no sale ninguna petición.
