@@ -27,13 +27,7 @@ El [OpenAPI propuesto](openapi-propuesta.yaml) describe una API futura y no cons
 
 El YAML fue parseado con `js-yaml` 3.14.1 ya disponible en una extensión local de VS Code, sin instalar paquetes. Se revisaron **24 rutas, 29 operaciones y 134 referencias locales**, parámetros de ruta, respuestas 2xx, seguridad global, cursor `410`, foto privada, cercanía POST y que `/health` sea la única operación explícitamente pública. También se ensayaron seis casos de `Point`, `CreateAlert` y `Alert` con AJV 4.11.8 y otros seis específicos: intención de foto requerida, `upsert` sin alerta rechazado, `removed` sin payload aceptado, `removed` con payload rechazado y métricas nulas aceptadas. Para probar `oneOf` con AJV 4 se convirtió `const` a `enum` en memoria: esa conversión no valida JSON Schema 2020-12 ni constituye prueba de compatibilidad OpenAPI 3.1.
 
-En el equipo actual se puede repetir el parseo sin instalar dependencias mediante PowerShell:
-
-```powershell
-node -e "const y=require('[ruta-local]/.vscode/extensions/ritwickdey.liveserver-5.7.10/node_modules/js-yaml');const d=y.safeLoad(require('fs').readFileSync('docs/api/openapi-propuesta.yaml','utf8'));console.log(d.openapi,Object.keys(d.paths).length)"
-```
-
-El parser y AJV pertenecen a una extensión local y sus rutas/versiones no son una dependencia reproducible del proyecto; el pipeline deberá fijar sus propias herramientas cuando se apruebe e implemente.
+El parser y AJV pertenecían a una extensión local y no constituyen una dependencia reproducible del proyecto. Se omite la ruta específica del equipo; el pipeline deberá fijar sus propias herramientas.
 
 Posteriormente se validó el documento con **Redocly CLI 2.79.0**, perfil `minimal`, ejecutado desde caché local sin red. Se corrigieron dos errores estructurales causados por comas sin comillas en mapas YAML, se agregaron descripciones de tags y `operationId`, y se cambió la ruta de instantáneas a `/sync/alerts/snapshots` para eliminar ambigüedades. El resultado del comando de abajo fue **salida 0, sin errores ni advertencias**:
 
