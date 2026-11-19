@@ -51,5 +51,5 @@ jobs:
         with:
           distribution: temurin
           java-version: '25.0.2'
-      - name: Verificar backend
-        run: sh ./mvnw --batch-mode verify
+      - name: Verificar backend y PostGIS
+        run: sh ./mvnw --batch-mode verify -Ppostgis-it
