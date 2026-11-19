@@ -1,0 +1,55 @@
+name: Integración continua
+
+on:
+  push:
+    branches: [devlop]
+  pull_request:
+    branches: [devlop]
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Cliente
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Preparar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22.17.1'
+          package-manager-cache: false
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Ejecutar pruebas
+        run: npm test
+      - name: Comprobar tipos y compilar
+        run: npm run build
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Preparar JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25.0.2'
+      - name: Verificar backend
+        run: sh ./mvnw --batch-mode verify
