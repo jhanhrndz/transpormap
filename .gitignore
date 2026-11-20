@@ -3,3 +3,9 @@
 
 /nbproject/private/private.xml
 /nbproject/private/private.properties
+
+/jxbrowser-*.jar
+/MyLicense-1.0.jar
+/build/classes/view/WebGobierno.class
+/build/classes/view/Main.class
+/build/classes/view/Main$*.class
