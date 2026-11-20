@@ -44,7 +44,11 @@ public class Mapa extends JXMapViewer {
         double latitud = 0;
         double longitud = 0;
         try {
-            URL url = new URL(System.getenv("TRANSPORMAP_LEGACY_MAP_URL"));
+            String mapUrl = System.getenv("TRANSPORMAP_LEGACY_MAP_URL");
+            if (mapUrl == null || mapUrl.isBlank()) {
+                throw new IllegalStateException("El servicio de mapas heredado no estÃ¡ configurado.");
+            }
+            URL url = new URL(mapUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.connect();
@@ -61,7 +65,7 @@ public class Mapa extends JXMapViewer {
             latitud = jsonRespuesta.getDouble("latitude");
             longitud = jsonRespuesta.getDouble("longitude");
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("No se pudo consultar el servicio de mapas heredado.");
         }
 
         setTileFactory(new DefaultTileFactory(new OSMTileFactoryInfo()));
@@ -104,7 +108,7 @@ public class Mapa extends JXMapViewer {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            return "Error al obtener la información de ubicación.";
+            return "Error al obtener la informaciï¿½n de ubicaciï¿½n.";
         }
     }
     

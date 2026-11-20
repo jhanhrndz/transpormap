@@ -18,6 +18,9 @@ public class ConnectionOracle {
     
     public static Connection conectar(){
         try {
+            if (url == null || url.isBlank() || user == null || user.isBlank() || pass == null || pass.isBlank()) {
+                throw new SQLException("La conexión Oracle heredada no está configurada.");
+            }
             Class.forName(driver);
             conn = DriverManager.getConnection(url, user, pass);
             if (conn != null) {
@@ -26,8 +29,8 @@ public class ConnectionOracle {
                 System.out.println("Conexion erronea!");
             }
         } catch (ClassNotFoundException | SQLException e) {
-            JOptionPane.showMessageDialog(null, "Error en conexion. "+e.getMessage()+ e);
-            System.out.println(""+e);
+            JOptionPane.showMessageDialog(null, "No se pudo abrir la conexión Oracle heredada.");
+            System.err.println("No se pudo abrir la conexión Oracle heredada.");
         }
         return conn;
     }
